@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "78301245906",
+    "project_id": "isymove-68cf1",
+    "storage_bucket": "isymove-68cf1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:78301245906:android:707136406c30d2c8ca980b",
+        "android_client_info": {
+          "package_name": "com.mycompany.tcc1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAcgcraItMCx7ES3YuuJygotRY90buskqk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
