@@ -169,12 +169,9 @@ T? castToType<T>(dynamic value) {
     return null;
   }
   switch (T) {
-    case double:
-      // Doubles may be stored as ints in some cases.
+    case const (double):
       return value.toDouble() as T;
-    case int:
-      // Likewise, ints may be stored as doubles. If this is the case
-      // (i.e. no decimal value), return the value as an int.
+    case const (int):
       if (value is num && value.toInt() == value) {
         return value.toInt() as T;
       }

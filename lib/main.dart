@@ -9,9 +9,7 @@ import '/flutter_flow/flutter_flow_theme.dart';
 import 'flutter_flow/flutter_flow_util.dart';
 import 'flutter_flow/internationalization.dart';
 
-// Importa todas as suas páginas reais
-import 'index.dart'; 
-// Importa o modelo da página inicial
+import 'index.dart';
 import 'package:tcc_1/main/pagina_inicial/pagina_inicial_model.dart'; 
 
 void main() async {
@@ -19,6 +17,7 @@ void main() async {
   GoRouter.optionURLReflectsImperativeAPIs = true;
   usePathUrlStrategy();
 
+  // Inicializações do Backend e Tema
   await SupaFlow.initialize();
   await FlutterFlowTheme.initialize();
 
@@ -33,6 +32,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider<FFAppState>.value(value: appState),
         ChangeNotifierProvider<AppStateNotifier>.value(value: appStateNotifier),
+        // Mantém o Model da Home global para persistir o nível do usuário
         ChangeNotifierProvider(create: (context) => PaginaInicialModel()),
       ],
       child: const MyApp(),
@@ -44,15 +44,13 @@ class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   @override
-  // Alterado para retornar o estado público MyAppState
   State<MyApp> createState() => MyAppState();
 
-  // Alterado para retornar o estado público MyAppState
   static MyAppState of(BuildContext context) =>
       context.findAncestorStateOfType<MyAppState>()!;
 }
 
-// CLASSE PÚBLICA (sem o _ no início)
+// Acesso via ferramentas do FlutterFlow
 class MyAppState extends State<MyApp> {
   Locale? _locale;
   ThemeMode _themeMode = FlutterFlowTheme.themeMode;
@@ -60,7 +58,7 @@ class MyAppState extends State<MyApp> {
   late final AppStateNotifier _appStateNotifier;
   late final GoRouter _router;
 
-  // --- MÉTODOS NECESSÁRIOS PARA O FLUTTER_FLOW_UTIL ---
+  // --- Métodos Utilitários do FlutterFlow ---
   String getRoute([RouteMatch? routeMatch]) {
     final RouteMatch lastMatch = routeMatch ?? _router.routerDelegate.currentConfiguration.last;
     final RouteMatchList matchList = lastMatch is ImperativeRouteMatch
@@ -73,13 +71,13 @@ class MyAppState extends State<MyApp> {
       _router.routerDelegate.currentConfiguration.matches
           .map((e) => getRoute(e))
           .toList();
-  // ----------------------------------------------------
+  // ------------------------------------------
 
   @override
   void initState() {
     super.initState();
     _appStateNotifier = AppStateNotifier.instance;
-    _router = createRouter(_appStateNotifier); 
+    _router = createRouter(_appStateNotifier); // Chama a função do nav.dart
   }
 
   void setLocale(String language) {
@@ -156,37 +154,42 @@ class NavBarPageState extends State<NavBarPage> {
       TelaEvolucaoWidget.routeName: const TelaEvolucaoWidget(),
       TelaPerfilWidget.routeName: const TelaPerfilWidget(),
     };
+    
     final currentIndex = tabs.keys.toList().indexOf(_currentPageName);
 
     return Scaffold(
       resizeToAvoidBottomInset: !widget.disableResizeToAvoidBottomInset,
       body: _currentPage ?? tabs[_currentPageName],
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: currentIndex,
+        currentIndex: currentIndex != -1 ? currentIndex : 0,
         onTap: (i) => safeSetState(() {
           _currentPage = null;
           _currentPageName = tabs.keys.toList()[i];
+          // Navega usando o GoRouter para manter a URL e histórico corretos
           context.goNamed(_currentPageName);
         }),
-        backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
+        backgroundColor: Colors.white, 
         selectedItemColor: const Color(0xFF8910F0),
-        unselectedItemColor: FlutterFlowTheme.of(context).secondaryText,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
+        unselectedItemColor: const Color(0xFF95A1AC), 
+        showSelectedLabels: true, 
+        showUnselectedLabels: true,
         type: BottomNavigationBarType.fixed,
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined, size: 24.0),
+            activeIcon: Icon(Icons.home_rounded, size: 24.0),
             label: 'Home',
             tooltip: '',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.auto_graph, size: 24.0),
-            label: 'Evolucao',
+            icon: Icon(Icons.show_chart_rounded, size: 24.0), 
+            activeIcon: Icon(Icons.show_chart, size: 24.0),
+            label: 'Evolução',
             tooltip: '',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.account_box, size: 24.0),
+            icon: Icon(Icons.person_outline, size: 24.0),
+            activeIcon: Icon(Icons.person, size: 24.0),
             label: 'Perfil',
             tooltip: '',
           )

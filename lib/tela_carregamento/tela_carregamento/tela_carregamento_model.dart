@@ -1,16 +1,11 @@
 import '/flutter_flow/flutter_flow_util.dart';
-import '/index.dart';
 import 'tela_carregamento_widget.dart' show TelaCarregamentoWidget;
 import 'package:flutter/material.dart';
 
 class TelaCarregamentoModel extends FlutterFlowModel<TelaCarregamentoWidget> {
   @override
-  void initState(BuildContext context) {
-    // Inicializações futuras para a tela de carregamento podem ser adicionadas aqui
-  }
+  void initState(BuildContext context) {}
 
   @override
-  void dispose() {
-    // Liberação de recursos, se houver
-  }
+  void dispose() {}
 }

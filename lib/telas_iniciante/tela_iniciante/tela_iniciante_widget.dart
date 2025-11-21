@@ -6,7 +6,6 @@ import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 
-// Importações dos modelos e widgets necessários
 import 'tela_iniciante_model.dart';
 import 'package:tcc_1/tela_treino_fixo/treino_model.dart'; 
 import 'package:tcc_1/flutter_flow/nav/nav.dart'; 
@@ -31,7 +30,7 @@ class _TelaInicianteWidgetState extends State<TelaInicianteWidget> {
     _model = TelaInicianteModel();
     // Inicializa o modelo buscando dados do banco
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _model.init(context);
+      _model.init();
     });
   }
 
@@ -41,19 +40,25 @@ class _TelaInicianteWidgetState extends State<TelaInicianteWidget> {
     
     final title = treinoData.nomeTreino;
     final subtitle = treinoData.descricao;
-    // Se não tiver imagem, usa um placeholder ou string vazia para tratar no errorBuilder
     final imageAsset = treinoData.imagemCaminho.isNotEmpty 
         ? treinoData.imagemCaminho 
         : 'assets/images/placeholder.png'; 
     
     return InkWell(
-      onTap: () {
-        // Navegação correta passando o objeto 'treinoData' via 'extra'
-        context.pushNamed(
-          routeTreinoFixo, // Constante definida em nav.dart
+      onTap: () async { 
+  
+        await context.pushNamed(
+          routeTreinoFixo, 
           extra: treinoData,
         );
+
+        // Verifica se o widget ainda existe (mounted) e recarrega os dados.
+        if (context.mounted) {
+          // Puxar o contador atualizado do Supabase
+          _model.init(); 
+        }
       },
+
       borderRadius: BorderRadius.circular(12),
       child: Container(
         width: (screenWidth / 2) - 30,

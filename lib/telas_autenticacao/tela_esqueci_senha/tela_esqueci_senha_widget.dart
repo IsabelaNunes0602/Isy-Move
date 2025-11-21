@@ -1,12 +1,15 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
-import '/telas_configuracoes/aviso_esqueci_senha/aviso_esqueci_senha_widget.dart';
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
+import 'package:tcc_1/componentes/aviso_esqueci_senha_widget.dart';
+
 import 'tela_esqueci_senha_model.dart';
 export 'tela_esqueci_senha_model.dart';
 
@@ -22,8 +25,8 @@ class TelaEsqueciSenhaWidget extends StatefulWidget {
 
 class _TelaEsqueciSenhaWidgetState extends State<TelaEsqueciSenhaWidget> {
   late TelaEsqueciSenhaModel _model;
-
   final scaffoldKey = GlobalKey<ScaffoldState>();
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -40,15 +43,69 @@ class _TelaEsqueciSenhaWidgetState extends State<TelaEsqueciSenhaWidget> {
     super.dispose();
   }
 
+  // --- Lógica de Recuperação ---
+  Future<void> _enviarEmailRecuperacao() async {
+    final email = _model.textController?.text.trim();
+
+    if (email == null || email.isEmpty || !email.contains('@')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Digite um e-mail válido.')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      // Envia o e-mail via Supabase
+      await Supabase.instance.client.auth.resetPasswordForEmail(email);
+
+      if (!mounted) return;
+
+      // Abre o modal de sucesso
+      await showModalBottomSheet(
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        enableDrag: false,
+        context: context,
+        builder: (context) {
+          return GestureDetector(
+            onTap: () => FocusScope.of(context).unfocus(),
+            child: Padding(
+              padding: MediaQuery.viewInsetsOf(context),
+              child: const AvisoEsqueciSenhaWidget(),
+            ),
+          );
+        },
+      );
+      
+    } on AuthException catch (e) {
+      // Tratamento de erro específico do Supabase
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro: ${e.message}'), 
+            backgroundColor: Colors.red
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erro inesperado ao enviar e-mail.'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     const Color primaryColor = Color(0xFF8910F0);
 
     return GestureDetector(
-      onTap: () {
-        FocusScope.of(context).unfocus();
-        FocusManager.instance.primaryFocus?.unfocus();
-      },
+      onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         key: scaffoldKey,
         backgroundColor: Colors.white,
@@ -107,16 +164,10 @@ class _TelaEsqueciSenhaWidgetState extends State<TelaEsqueciSenhaWidget> {
                 TextFormField(
                   controller: _model.textController,
                   focusNode: _model.textFieldFocusNode,
-                  autofocus: true,
                   keyboardType: TextInputType.emailAddress,
-                  textInputAction: TextInputAction.done,
-                  obscureText: false,
                   decoration: InputDecoration(
                     hintText: 'Digite seu e-mail',
-                    hintStyle: GoogleFonts.nunito(
-                      fontSize: 14,
-                      color: FlutterFlowTheme.of(context).secondaryText,
-                    ),
+                    hintStyle: GoogleFonts.nunito(color: Colors.grey),
                     enabledBorder: OutlineInputBorder(
                       borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
                       borderRadius: BorderRadius.circular(12),
@@ -125,52 +176,24 @@ class _TelaEsqueciSenhaWidgetState extends State<TelaEsqueciSenhaWidget> {
                       borderSide: const BorderSide(color: primaryColor, width: 1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    errorBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: FlutterFlowTheme.of(context).error, width: 1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    focusedErrorBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: FlutterFlowTheme.of(context).error, width: 1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
                     filled: true,
                     fillColor: Colors.grey.shade100,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   ),
                   style: GoogleFonts.nunito(
                     fontSize: 16,
-                    fontWeight: FontWeight.w500,
                     color: Colors.black87,
                   ),
-                  cursorColor: primaryColor,
-                  validator: _model.textControllerValidator.asValidator(context),
                 ),
                 const SizedBox(height: 30),
+                
+                // Botão Enviar
                 SizedBox(
                   width: double.infinity,
                   height: 50,
                   child: FFButtonWidget(
-                    onPressed: () async {
-                      await showModalBottomSheet(
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        enableDrag: false,
-                        context: context,
-                        builder: (context) {
-                          return GestureDetector(
-                            onTap: () {
-                              FocusScope.of(context).unfocus();
-                              FocusManager.instance.primaryFocus?.unfocus();
-                            },
-                            child: Padding(
-                              padding: MediaQuery.viewInsetsOf(context),
-                              child: const AvisoEsqueciSenhaWidget(),
-                            ),
-                          );
-                        },
-                      ).then((value) => safeSetState(() {}));
-                    },
-                    text: 'Enviar e-mail',
+                    onPressed: _isLoading ? null : _enviarEmailRecuperacao,
+                    text: _isLoading ? 'Enviando...' : 'Enviar e-mail',
                     options: FFButtonOptions(
                       color: primaryColor,
                       textStyle: GoogleFonts.leagueSpartan(

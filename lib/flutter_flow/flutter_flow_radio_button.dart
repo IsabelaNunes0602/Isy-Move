@@ -1,30 +1,3 @@
-/*
- * Copyright 2020 https://github.com/TercyoStorck
- *
- * Source code has been modified by FlutterFlow, Inc.
- * 
- * Redistribution and use in source and binary forms, with or without 
- * modification, are permitted provided that the following conditions are met:
- * 
- * 1. Redistributions of source code must retain the above copyright notice, 
- * this list of conditions and the following disclaimer.
- * 
- * 2. Redistributions in binary form must reproduce the above copyright notice, 
- * this list of conditions and the following disclaimer in the 
- * documentation and/or other materials provided with the distribution.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS 
- * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED 
- * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE 
- * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
 import 'form_field_controller.dart';
 import 'package:flutter/material.dart';
 import 'flutter_flow_widgets.dart';
@@ -121,29 +94,26 @@ class _FlutterFlowRadioButtonState extends State<FlutterFlowRadioButton> {
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: Theme.of(context)
-          .copyWith(unselectedWidgetColor: widget.inactiveRadioButtonColor),
-      child: RadioGroup<String>.builder(
-        direction: widget.direction,
-        groupValue: controller.value,
-        onChanged: enabled ? (value) => controller.value = value : null,
-        activeColor: widget.radioButtonColor,
-        toggleable: widget.toggleable,
-        textStyle: widget.textStyle,
-        selectedTextStyle: widget.selectedTextStyle ?? widget.textStyle,
-        textPadding: widget.textPadding,
-        optionHeight: widget.optionHeight,
-        optionWidth: widget.optionWidth,
-        horizontalAlignment: widget.horizontalAlignment,
-        verticalAlignment: widget.verticalAlignment,
-        items: effectiveOptions,
-        itemBuilder: (item) =>
-            RadioButtonBuilder(item, buttonPosition: widget.buttonPosition),
-        focusBorder: widget.focusBorder,
-        focusBorderRadius: widget.focusBorderRadius,
-        focusBorderPadding: widget.focusBorderPadding,
-      ),
+    return RadioGroup<String>.builder(
+      direction: widget.direction,
+      groupValue: controller.value,
+      onChanged: enabled ? (value) => controller.value = value : null,
+      activeColor: widget.radioButtonColor,
+      inactiveColor: widget.inactiveRadioButtonColor,
+      toggleable: widget.toggleable,
+      textStyle: widget.textStyle,
+      selectedTextStyle: widget.selectedTextStyle ?? widget.textStyle,
+      textPadding: widget.textPadding,
+      optionHeight: widget.optionHeight,
+      optionWidth: widget.optionWidth,
+      horizontalAlignment: widget.horizontalAlignment,
+      verticalAlignment: widget.verticalAlignment,
+      items: effectiveOptions,
+      itemBuilder: (item) =>
+          RadioButtonBuilder(item, buttonPosition: widget.buttonPosition),
+      focusBorder: widget.focusBorder,
+      focusBorderRadius: widget.focusBorderRadius,
+      focusBorderPadding: widget.focusBorderPadding,
     );
   }
 }
@@ -172,6 +142,7 @@ class RadioButton<T> extends StatelessWidget {
     required this.onChanged,
     required this.buttonPosition,
     required this.activeColor,
+    this.inactiveColor,
     required this.toggleable,
     required this.textStyle,
     required this.selectedTextStyle,
@@ -188,6 +159,7 @@ class RadioButton<T> extends StatelessWidget {
   final void Function(T?)? onChanged;
   final RadioButtonPosition buttonPosition;
   final Color activeColor;
+  final Color? inactiveColor;
   final bool toggleable;
   final TextStyle textStyle;
   final TextStyle selectedTextStyle;
@@ -201,6 +173,13 @@ class RadioButton<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final selectedStyle = selectedTextStyle;
     final isSelected = value == groupValue;
+    
+    Widget radioIcon = Icon(
+      isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+      color: isSelected ? activeColor : (inactiveColor ?? Colors.grey),
+      size: 24,
+    );
+
     Widget radioButtonText = Padding(
       padding: textPadding,
       child: Text(
@@ -208,29 +187,41 @@ class RadioButton<T> extends StatelessWidget {
         style: isSelected ? selectedStyle : textStyle,
       ),
     );
+    
     if (shouldFlex) {
       radioButtonText = Flexible(child: radioButtonText);
     }
 
-    Widget radioButton = GestureDetector(
-      onTap: onChanged != null ? () => onChanged!(value) : null,
+    Widget radioButton = InkWell(
+
+      borderRadius: BorderRadius.circular(20), 
+      onTap: onChanged != null 
+        ? () {
+            if (toggleable && isSelected) {
+              onChanged!(null);
+            } else {
+              onChanged!(value);
+            }
+          } 
+        : null,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          if (buttonPosition == RadioButtonPosition.right) radioButtonText,
-          Radio<T>(
-            groupValue: groupValue,
-            onChanged: onChanged,
-            value: value,
-            activeColor: activeColor,
-            toggleable: toggleable,
-          ),
-          if (buttonPosition == RadioButtonPosition.left) radioButtonText,
+          if (buttonPosition == RadioButtonPosition.right) ...[
+             radioButtonText,
+             const SizedBox(width: 8),
+          ],
+          
+          radioIcon, 
+          
+          if (buttonPosition == RadioButtonPosition.left) ...[
+             const SizedBox(width: 8),
+             radioButtonText,
+          ],
         ],
       ),
     );
 
-    // Wrap individual radio button with FFFocusIndicator if focus properties are provided
     if (focusBorder != null ||
         focusBorderRadius != null ||
         focusBorderPadding != null) {
@@ -257,6 +248,7 @@ class RadioGroup<T> extends StatelessWidget {
     required this.optionHeight,
     required this.horizontalAlignment,
     required this.activeColor,
+    this.inactiveColor,
     required this.toggleable,
     required this.textStyle,
     required this.selectedTextStyle,
@@ -278,6 +270,7 @@ class RadioGroup<T> extends StatelessWidget {
   final WrapAlignment horizontalAlignment;
   final WrapCrossAlignment verticalAlignment;
   final Color activeColor;
+  final Color? inactiveColor;
   final bool toggleable;
   final TextStyle textStyle;
   final TextStyle selectedTextStyle;
@@ -299,6 +292,7 @@ class RadioGroup<T> extends StatelessWidget {
               onChanged: onChanged,
               buttonPosition: radioButtonBuilder.buttonPosition,
               activeColor: activeColor,
+              inactiveColor: inactiveColor,
               toggleable: toggleable,
               textStyle: textStyle,
               selectedTextStyle: selectedTextStyle,

@@ -16,12 +16,18 @@ class PaginaInicialWidget extends StatefulWidget {
 }
 
 class _PaginaInicialWidgetState extends State<PaginaInicialWidget> {
-  // O userLevel será acessado do modelo (state management), não mais hardcoded aqui.
+  
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<PaginaInicialModel>().init(context);
+    });
+  }
 
   final List<_NivelTreinoInfo> niveisTreino = [
     _NivelTreinoInfo(
       nome: 'Iniciante',
-      // Note: Assumindo que 'assets/images/nivelIniciante.png' existe no projeto.
       imagem: 'assets/images/nivelIniciante.png',
       rota: 'telaIniciante',
       nivelRequerido: 1,
@@ -40,18 +46,25 @@ class _PaginaInicialWidgetState extends State<PaginaInicialWidget> {
     ),
   ];
 
-  void _onCardTap(_NivelTreinoInfo nivel) {
-    // Usa context.read para acessar o modelo sem rebuildar o widget, ideal para ações (eventos)
+
+  Future<void> _onCardTap(_NivelTreinoInfo nivel) async { 
     final model = context.read<PaginaInicialModel>();
 
     if (model.userLevel >= nivel.nivelRequerido) {
-      // Navegação quando permitido
-      context.pushNamed(nivel.rota);
+
+      await context.pushNamed(nivel.rota);
+      
+
+      if (mounted) {
+
+         await model.init(context); 
+      }
     } else {
       // Exibe modal de bloqueio
       _showNivelBloqueadoModal();
     }
   }
+  // ----------------------------------------
 
   void _showNivelBloqueadoModal() {
     showDialog(
@@ -64,7 +77,7 @@ class _PaginaInicialWidgetState extends State<PaginaInicialWidget> {
             BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
               child: Container(
-                color: Colors.black.withOpacity(0.3),
+                color: Colors.black.withValues(alpha: 0.3),
               ),
             ),
             Center(
@@ -120,7 +133,7 @@ class _PaginaInicialWidgetState extends State<PaginaInicialWidget> {
     );
   }
 
-  // O card agora recebe o nível atual do usuário para decidir se está desbloqueado.
+  // O card recebe o nível atual do usuário para decidir se está desbloqueado.
   Widget buildNivelTreinoCard(_NivelTreinoInfo nivel, int currentUserLevel) {
     bool desbloqueado = currentUserLevel >= nivel.nivelRequerido;
     return InkWell(
@@ -233,7 +246,7 @@ class _PaginaInicialWidgetState extends State<PaginaInicialWidget> {
             ...niveisTreino
                 .map((nivel) => buildNivelTreinoCard(nivel, currentUserLevel)),
             const SizedBox(height: 30),
-            // Exibindo o nível atual para debug (opcional, pode remover)
+
             Center(
               child: Text(
                 'Nível Atual do Usuário: $currentUserLevel',

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:tcc_1/tela_treino_fixo/treino_fixo_widget.dart';
+
+
+import '/index.dart'; 
+import '/main.dart'; 
+
 import 'package:tcc_1/tela_treino_fixo/treino_model.dart';
-import '/index.dart'; // Importa os widgets
-import '/main.dart';  // Importa a NavBarPage
+
 
 // ***************************************************************
 // 1. App State Notifier
@@ -57,7 +60,8 @@ const String routeTelaCriarConta = 'telaCriarConta';
 const String routeTelaEsqueciSenha = 'telaEsqueciSenha';
 const String routePaginaInicial = 'paginaInicial';
 const String routeTelaCompletarPerfil = 'telaCompletarPerfil';
-const String routeTreinoFixo = 'treinoFixo'; // Rota genérica para execução
+const String routeTreinoFixo = 'treinoFixo'; 
+const String routeTreinoAvancado = 'telaTreinoAvancado';
 
 const List<String> publicRoutes = [
   routeTelaCarregamento, 
@@ -107,19 +111,27 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           builder: (context, state) => const TelaCompletarPerfilWidget(),
         ),
         
-        // --- ROTA DE EXECUÇÃO DE TREINO (GENÉRICA) ---
+        // --- ROTAS DE EXECUÇÃO (SEM NAVBAR) ---
+        // Treino Fixo (Iniciante/Intermediário)
         GoRoute(
           path: '/execucao',
           name: routeTreinoFixo,
           builder: (context, state) {
-            // Recupera o objeto Treino passado como argumento extra
             final treino = state.extra as Treino?;
-            // Fallback: Se não vier treino, volta para o início (evita tela vermelha)
             if (treino == null) {
                return const PaginaInicialWidget(); 
             }
             return TreinoFixoWidget(treino: treino);
           },
+        ),
+        // Treino Avançado (Gerado)
+        GoRoute(
+          path: '/telaTreinoAvancado',
+          name: routeTreinoAvancado,
+          builder: (context, state) {
+            List<String> grupos = state.extra as List<String>? ?? [];
+            return TelaTreinoAvancadoWidget(gruposSelecionados: grupos);
+          }
         ),
 
         // --- ROTA PRINCIPAL COM BARRA DE NAVEGAÇÃO (NAVBAR) ---
@@ -128,7 +140,7 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           name: 'NavBarPage', 
           builder: (context, state) => const NavBarPage(initialPage: routePaginaInicial), 
           routes: [
-            // Abas
+            // Abas Principais
             GoRoute(
               path: 'paginaInicial', 
               name: routePaginaInicial,
@@ -145,7 +157,7 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
               builder: (context, state) => const NavBarPage(initialPage: 'telaPerfil'),
             ),
             
-            // Rotas filhas (mantêm a NavBar)
+            // Rotas filhas (que devem manter a NavBar visível)
             GoRoute(
               path: 'telaConfiguracoes',
               name: 'telaConfiguracoes',
@@ -153,7 +165,7 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
             ),
             GoRoute(
               path: 'deletarConta',
-              name: 'deletarConta',
+              name: 'DeletarConta',
               builder: (context, state) => const DeletarContaWidget(),
             ),
             GoRoute(
@@ -162,12 +174,7 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
               builder: (context, state) => const AlterarSenhaWidget(),
             ),
 
-            // Telas de Listagem de Níveis
-            GoRoute(
-              path: 'telaTreinoAvancado',
-              name: 'telaTreinoAvancado',
-              builder: (context, state) => const TelaTreinoAvancadoWidget(),
-            ),
+            // Listagens de Níveis
             GoRoute(
               path: 'telaAvancado',
               name: 'telaAvancado',
@@ -197,18 +204,17 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
         
         final isPublic = publicRoutes.contains(location);
         
+
         if (location == routeTelaCarregamento) {
-             if (loggedIn) {
-                return '/paginaInicial';
-            } else {
-                return '/telaInicio'; 
-            }
+             return null; 
         }
 
+        // Se não está logado e tenta acessar rota privada -> Login
         if (!loggedIn && !isPublic) {
-          return '/telaLogin'; 
+          return '/telaInicio'; // Ou '/telaLogin'
         }
         
+        // Se já está logado e tenta acessar rota pública (login/cadastro) -> Home
         if (loggedIn && (location == routeTelaLogin ||
                          location == routeTelaCriarConta ||
                          location == routeTelaEsqueciSenha || 

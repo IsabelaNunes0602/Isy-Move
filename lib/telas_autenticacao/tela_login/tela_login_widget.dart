@@ -1,13 +1,16 @@
 import 'package:go_router/go_router.dart';
-
+import 'package:tcc_1/telas_autenticacao/tela_esqueci_senha/tela_esqueci_senha_widget.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
-import '/index.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:supabase_flutter/supabase_flutter.dart'; // Importação essencial
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../main/pagina_inicial/pagina_inicial_widget.dart';
+import '../../telas_autenticacao/tela_criar_conta/tela_criar_conta_widget.dart';
+
 import 'tela_login_model.dart';
 export 'tela_login_model.dart';
 
@@ -25,7 +28,6 @@ class _TelaLoginWidgetState extends State<TelaLoginWidget> {
   late TelaLoginModel _model;
   final scaffoldKey = GlobalKey<ScaffoldState>();
   
-  // Adiciona estado de carregamento para o botão
   bool _isLoading = false; 
 
   @override
@@ -39,7 +41,7 @@ class _TelaLoginWidgetState extends State<TelaLoginWidget> {
     _model.textController2 ??= TextEditingController();
     _model.textFieldFocusNode2 ??= FocusNode();
 
-    _model.passwordVisibility = false; // Usa o modelo para o estado
+    _model.passwordVisibility = false;
   }
 
   @override
@@ -48,9 +50,7 @@ class _TelaLoginWidgetState extends State<TelaLoginWidget> {
     super.dispose();
   }
 
-  // --- NOVA FUNÇÃO DE LOGIN ---
   Future<void> _handleLogin() async {
-    // 1. Validação simples
     final email = _model.textController1!.text.trim();
     final password = _model.textController2!.text.trim();
 
@@ -63,35 +63,30 @@ class _TelaLoginWidgetState extends State<TelaLoginWidget> {
 
     if (_isLoading) return;
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
-      // 2. Chama a função de login do Supabase
       final response = await Supabase.instance.client.auth.signInWithPassword(
         email: email,
         password: password,
       );
 
-      // Se a resposta for bem-sucedida (não há exceção), o usuário está logado.
       if (response.user != null) {
         if (!mounted) return;
-        // 3. Sucesso: Navega para a página inicial
+        // Sucesso! Vai para a Home
         context.goNamed(PaginaInicialWidget.routeName);
       } else {
-        // Isso só deve ser executado se o Supabase não lançar uma exceção,
-        // mas retornar um erro de forma incompleta, mas é bom ter.
         throw const AuthException('Ocorreu um erro desconhecido no login.');
       }
       
     } on AuthException catch (e) {
-      // 4. Tratamento de Erros (Senha inválida, usuário não existe, etc.)
       if (!mounted) return;
       
       String message;
       if (e.message.contains('Invalid login credentials')) {
-        message = 'Email ou senha inválidos. Por favor, verifique.';
+        message = 'Email ou senha incorretos.';
+      } else if (e.message.contains('Email not confirmed')) {
+        message = 'Por favor, confirme seu email antes de entrar.';
       } else {
         message = 'Erro ao entrar: ${e.message}';
       }
@@ -101,17 +96,12 @@ class _TelaLoginWidgetState extends State<TelaLoginWidget> {
       );
       
     } catch (e) {
-      // 5. Tratamento de Outros Erros (Sem internet, etc.)
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(backgroundColor: Colors.red, content: Text('Falha na conexão ou erro inesperado.')),
       );
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -127,18 +117,20 @@ class _TelaLoginWidgetState extends State<TelaLoginWidget> {
         appBar: AppBar(
           backgroundColor: primaryColor,
           automaticallyImplyLeading: false,
-          leading: FlutterFlowIconButton(
-            borderColor: Colors.transparent,
-            borderRadius: 30.0,
-            borderWidth: 1.0,
-            buttonSize: 55.0,
-            icon: const Icon(
-              Icons.arrow_back_rounded,
-              color: Colors.white,
-              size: 30.0,
-            ),
-            onPressed: () => context.pop(),
-          ),
+          leading: context.canPop() 
+            ? FlutterFlowIconButton(
+                borderColor: Colors.transparent,
+                borderRadius: 30.0,
+                borderWidth: 1.0,
+                buttonSize: 55.0,
+                icon: const Icon(
+                  Icons.arrow_back_rounded,
+                  color: Colors.white,
+                  size: 30.0,
+                ),
+                onPressed: () => context.pop(),
+              )
+            : null, // Esconde o botão se não tiver pra onde voltar
           title: Text(
             'Entre na sua conta',
             style: FlutterFlowTheme.of(context).headlineMedium.override(
@@ -167,7 +159,8 @@ class _TelaLoginWidgetState extends State<TelaLoginWidget> {
                       ),
                 ),
                 const SizedBox(height: 25),
-                // Email Field
+                
+                // EMAIL
                 Text(
                   'Email',
                   style: FlutterFlowTheme.of(context).headlineSmall.override(
@@ -191,19 +184,16 @@ class _TelaLoginWidgetState extends State<TelaLoginWidget> {
                       borderRadius: BorderRadius.circular(15),
                       borderSide: BorderSide.none,
                     ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   ),
                   style: FlutterFlowTheme.of(context).bodyMedium.override(
                         font: GoogleFonts.nunito(),
                         fontSize: 16,
                       ),
-                  validator: _model.textController1Validator.asValidator(context),
                 ),
                 const SizedBox(height: 20),
-                // Password Field
+                
+                // SENHA
                 Text(
                   'Senha',
                   style: FlutterFlowTheme.of(context).headlineSmall.override(
@@ -218,7 +208,7 @@ class _TelaLoginWidgetState extends State<TelaLoginWidget> {
                   controller: _model.textController2,
                   focusNode: _model.textFieldFocusNode2,
                   keyboardType: TextInputType.visiblePassword,
-                  obscureText: !_model.passwordVisibility, // Usa o estado do modelo
+                  obscureText: !_model.passwordVisibility,
                   decoration: InputDecoration(
                     hintText: 'Digite sua senha',
                     filled: true,
@@ -227,10 +217,7 @@ class _TelaLoginWidgetState extends State<TelaLoginWidget> {
                       borderRadius: BorderRadius.circular(15),
                       borderSide: BorderSide.none,
                     ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     suffixIcon: InkWell(
                       onTap: () => setState(() => _model.passwordVisibility = !_model.passwordVisibility),
                       child: Icon(
@@ -238,6 +225,7 @@ class _TelaLoginWidgetState extends State<TelaLoginWidget> {
                             ? Icons.visibility_outlined
                             : Icons.visibility_off_outlined,
                         size: 22,
+                        color: Colors.grey[600],
                       ),
                     ),
                   ),
@@ -245,14 +233,16 @@ class _TelaLoginWidgetState extends State<TelaLoginWidget> {
                         font: GoogleFonts.nunito(),
                         fontSize: 16,
                       ),
-                  validator: _model.textController2Validator.asValidator(context),
                 ),
+                
+                // LINKS AUXILIARES
                 Align(
                   alignment: Alignment.centerRight,
                   child: Padding(
                     padding: const EdgeInsets.only(top: 8),
                     child: GestureDetector(
                       onTap: () => context.pushNamed(TelaEsqueciSenhaWidget.routeName),
+                      
                       child: Text(
                         'Esqueci minha senha',
                         style: FlutterFlowTheme.of(context).bodyMedium.override(
@@ -280,10 +270,13 @@ class _TelaLoginWidgetState extends State<TelaLoginWidget> {
                     ),
                   ),
                 ),
+                
                 const SizedBox(height: 30),
+                
+                // BOTÃO ENTRAR
                 Center(
                   child: FFButtonWidget(
-                    onPressed: _isLoading ? null : _handleLogin, // Chama a nova função
+                    onPressed: _isLoading ? null : _handleLogin,
                     text: _isLoading ? 'Entrando...' : 'Entrar',
                     options: FFButtonOptions(
                       width: 290,

@@ -6,7 +6,6 @@ import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 
-// Imports dos modelos e da tela genérica
 import 'tela_intermediario_model.dart';
 import 'package:tcc_1/tela_treino_fixo/treino_model.dart';
 import 'package:tcc_1/flutter_flow/nav/nav.dart';
@@ -45,12 +44,19 @@ class _TelaIntermediarioWidgetState extends State<TelaIntermediarioWidget> {
         : 'assets/images/nivelIntermediario.png'; 
 
     return InkWell(
-      onTap: () {
+ 
+      onTap: () async {
         // Navega para a tela genérica com os dados do treino clicado
-        context.pushNamed(
+        await context.pushNamed(
           routeTreinoFixo, 
           extra: treinoData,
         );
+        
+        
+        // Quando volta, atualiza só o contador
+        if (mounted) {
+           await _model.atualizarProgresso();
+        }
       },
       borderRadius: BorderRadius.circular(12),
       child: Container(

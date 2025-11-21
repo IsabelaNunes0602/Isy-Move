@@ -20,62 +20,45 @@ class FFAppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  List<String> _musculosSelecionados = [];
-  List<String> get musculosSelecionados => _musculosSelecionados;
-  set musculosSelecionados(List<String> value) {
-    _musculosSelecionados = value;
-  }
+  List<String> musculosSelecionados = [];
+
+  double metaPeso = 0.0;
+
+  String nivelUsuario = '';
+
+  double pesoAtual = 0.0;
+
+  double percentualProgresso = 0.0;
+
+  int progressoUsuario = 0;
+
+  // --- Métodos Auxiliares ---
 
   void addToMusculosSelecionados(String value) {
     musculosSelecionados.add(value);
+    notifyListeners(); 
   }
 
   void removeFromMusculosSelecionados(String value) {
     musculosSelecionados.remove(value);
+    notifyListeners();
   }
 
   void removeAtIndexFromMusculosSelecionados(int index) {
     musculosSelecionados.removeAt(index);
+    notifyListeners();
   }
 
   void updateMusculosSelecionadosAtIndex(
     int index,
     String Function(String) updateFn,
   ) {
-    musculosSelecionados[index] = updateFn(_musculosSelecionados[index]);
+    musculosSelecionados[index] = updateFn(musculosSelecionados[index]);
+    notifyListeners();
   }
 
   void insertAtIndexInMusculosSelecionados(int index, String value) {
     musculosSelecionados.insert(index, value);
-  }
-
-  double _metaPeso = 0.0;
-  double get metaPeso => _metaPeso;
-  set metaPeso(double value) {
-    _metaPeso = value;
-  }
-
-  String _nivelUsuario = '';
-  String get nivelUsuario => _nivelUsuario;
-  set nivelUsuario(String value) {
-    _nivelUsuario = value;
-  }
-
-  double _pesoAtual = 0.0;
-  double get pesoAtual => _pesoAtual;
-  set pesoAtual(double value) {
-    _pesoAtual = value;
-  }
-
-  double _percentualProgresso = 0.0;
-  double get percentualProgresso => _percentualProgresso;
-  set percentualProgresso(double value) {
-    _percentualProgresso = value;
-  }
-
-  int _progressoUsuario = 0;
-  int get progressoUsuario => _progressoUsuario;
-  set progressoUsuario(int value) {
-    _progressoUsuario = value;
+    notifyListeners();
   }
 }

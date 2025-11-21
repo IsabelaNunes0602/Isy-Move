@@ -1,12 +1,13 @@
 import 'package:go_router/go_router.dart';
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import '/flutter_flow/form_field_controller.dart';
-import '/index.dart';
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../main/pagina_inicial/pagina_inicial_widget.dart'; 
+
 import 'tela_completar_perfil_model.dart';
 export 'tela_completar_perfil_model.dart';
 
@@ -41,7 +42,6 @@ class _TelaCompletarPerfilWidgetState extends State<TelaCompletarPerfilWidget> {
     _model.dataFocus = FocusNode();
     _model.pesoFocus = FocusNode();
     
-    // Inicializa os controllers dos radios
     _model.generoController ??= FormFieldController<String>(null);
     _model.nivelController ??= FormFieldController<String>(null);
   }
@@ -57,13 +57,17 @@ class _TelaCompletarPerfilWidgetState extends State<TelaCompletarPerfilWidget> {
     try {
       final parts = dataBrasileira.split('/');
       if (parts.length != 3) return null;
-      return '${parts[2]}-${parts[1]}-${parts[0]}'; 
+      // Garante que tenha 2 digitos (ex: 1 -> 01
+      final dia = parts[0].padLeft(2, '0');
+      final mes = parts[1].padLeft(2, '0');
+      final ano = parts[2];
+      return '$ano-$mes-$dia'; 
     } catch (e) {
       return null;
     }
   }
 
-  // --- WIDGET CUSTOMIZADO PARA RADIO HORIZONTAL ---
+  // --- WIDGET CUSTOMIZADO ---
   Widget _buildCustomRadioRow({
     required List<String> options,
     required FormFieldController<String> controller,
@@ -71,29 +75,38 @@ class _TelaCompletarPerfilWidgetState extends State<TelaCompletarPerfilWidget> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
       children: options.map((option) {
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Radio<String>(
-              value: option,
-              groupValue: controller.value,
-              activeColor: const Color(0xFF8910F0),
-              onChanged: (value) {
-                setState(() {
-                  controller.value = value;
-                });
-              },
+        final isSelected = controller.value == option;
+        
+        return Padding(
+          padding: const EdgeInsets.only(right: 15.0), // Espaço entre opções
+          child: InkWell(
+            onTap: () {
+              setState(() {
+                controller.value = option;
+              });
+            },
+            borderRadius: BorderRadius.circular(20),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Simula o Radio com Ícones
+                Icon(
+                  isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                  color: isSelected ? const Color(0xFF8910F0) : Colors.grey,
+                  size: 24,
+                ),
+                const SizedBox(width: 6), // Espaço entre bolinha e texto
+                Text(
+                  option,
+                  style: GoogleFonts.nunito(
+                    fontSize: 14,
+                    color: Colors.black,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+              ],
             ),
-            Text(
-              option,
-              style: GoogleFonts.nunito(
-                fontSize: 14, // Fonte um pouco menor para caber na linha
-                color: Colors.black, // Força a cor preta
-                fontWeight: controller.value == option ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
-            const SizedBox(width: 5), // Espaço entre os itens
-          ],
+          ),
         );
       }).toList(),
     );
@@ -127,7 +140,7 @@ class _TelaCompletarPerfilWidgetState extends State<TelaCompletarPerfilWidget> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: Color(0xFF8910F0)), // Borda roxa ao focar
+            borderSide: const BorderSide(color: Color(0xFF8910F0)), 
           ),
           contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
         ),
@@ -140,15 +153,13 @@ class _TelaCompletarPerfilWidgetState extends State<TelaCompletarPerfilWidget> {
 
     final user = Supabase.instance.client.auth.currentUser;
     
-    // Verificação dupla para debug
     if (user == null) {
-      // Tenta buscar a sessão novamente caso tenha havido delay
       final session = Supabase.instance.client.auth.currentSession;
       if (session == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             backgroundColor: Colors.red,
-            content: Text("Erro: Usuário não autenticado. Verifique se confirmou o email ou desligue a confirmação no Supabase."),
+            content: Text("Erro: Usuário não autenticado."),
           ),
         );
         return;
@@ -198,17 +209,33 @@ class _TelaCompletarPerfilWidgetState extends State<TelaCompletarPerfilWidget> {
         'nivel_usuario': nivelSelecionado,
       }, onConflict: 'id_usuario');
 
-      // 2. Inicializar a tabela 'progresso'
-      // Importante: Usamos upsert aqui também para evitar erro se o usuário clicar duas vezes
+
+      // --- Lógica da Régua Cumulativa ---
+      
+      int treinosIniciais = 0; // Padrão para Iniciante
+
+      if (nivelSelecionado == 'Intermediário') {
+        // Se escolheu Intermediário, já "fez" os 15 do iniciante
+        treinosIniciais = 15;
+      } 
+      else if (nivelSelecionado == 'Avançado') {
+        // Se escolheu Avançado, já "fez" 15 (iniciante) + 40 (intermediário)
+        treinosIniciais = 55;
+      }
+      
+      // --------------------------------------------------------
+
+      // 2. Inicializar a tabela 'progresso' com o valor calculado
       await supabase.from('progresso').upsert({
         'id_usuario': userId,
-        'treinos_concluidos': 0,
-        'nivel_atual': nivelSelecionado, // Use o nível que acabou de ser selecionado
-        'ultima_atualizacao': DateTime.now().toIso8601String(),
-      }, onConflict: 'id_usuario'); // Se já existir, não duplica, apenas atualiza
+        'treinos_concluidos': treinosIniciais,
+        'desconto_inicial': treinosIniciais,
+        'ultimo_treino_data': DateTime.now().toIso8601String(),
+      }, onConflict: 'id_usuario');
 
       if (!mounted) return;
 
+      // Navega para a Home
       context.goNamed(PaginaInicialWidget.routeName);
 
     } catch (e) {
@@ -222,7 +249,7 @@ class _TelaCompletarPerfilWidgetState extends State<TelaCompletarPerfilWidget> {
 
   @override
   Widget build(BuildContext context) {
-    const Color primaryColor = Color(0xFF8910F0); // Cor sólida corrigida
+    const Color primaryColor = Color(0xFF8910F0); 
 
     return GestureDetector(
       onTap: () {
@@ -252,6 +279,7 @@ class _TelaCompletarPerfilWidgetState extends State<TelaCompletarPerfilWidget> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
+                  // Foto de Perfil (Placeholder)
                   Center(
                     child: ClipOval(
                       child: Image.asset(
@@ -285,8 +313,6 @@ class _TelaCompletarPerfilWidgetState extends State<TelaCompletarPerfilWidget> {
                     child: Text('Gênero', style: GoogleFonts.leagueSpartan(fontWeight: FontWeight.w500, fontSize: 22)),
                   ),
                   
-                  // --- AQUI ESTÁ A MUDANÇA PARA HORIZONTAL ---
-                  // Usando SingleChildScrollView horizontal caso a tela seja pequena
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: _buildCustomRadioRow(
@@ -318,7 +344,6 @@ class _TelaCompletarPerfilWidgetState extends State<TelaCompletarPerfilWidget> {
                     child: Text('Nível de atividade física', style: GoogleFonts.leagueSpartan(fontWeight: FontWeight.w500, fontSize: 22)),
                   ),
                   
-                  // --- MUDANÇA PARA HORIZONTAL ---
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: _buildCustomRadioRow(

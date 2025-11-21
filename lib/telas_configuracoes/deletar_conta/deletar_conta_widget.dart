@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
-import 'package:tcc_1/telas_configuracoes/aviso_deletar_conta/aviso_deletar_conta_widget.dart';
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
@@ -7,8 +8,9 @@ import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import '/flutter_flow/flutter_flow_checkbox_group.dart';
 import '/flutter_flow/form_field_controller.dart';
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
+import 'package:tcc_1/componentes/aviso_deletar_conta_widget.dart';
+
 import 'deletar_conta_model.dart';
 export 'deletar_conta_model.dart';
 
@@ -34,10 +36,6 @@ class _DeletarContaWidgetState extends State<DeletarContaWidget> {
 
     _model.textController ??= TextEditingController();
     _model.textFieldFocusNode ??= FocusNode();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {
-          _model.textController?.text = 'Nos conte o que aconteceu';
-        }));
   }
 
   @override
@@ -53,13 +51,12 @@ class _DeletarContaWidgetState extends State<DeletarContaWidget> {
         'Não consegui mexer',
         'Outros',
       ],
-      onChanged: (val) => safeSetState(() => _model.checkboxGroupValues = val),
+      onChanged: (val) => setState(() => _model.checkboxGroupValues = val),
       controller: _model.checkboxGroupValueController ??= FormFieldController<List<String>>([]),
       activeColor: const Color(0xC58910F0),
-      checkColor: FlutterFlowTheme.of(context).info,
-      checkboxBorderColor: FlutterFlowTheme.of(context).secondaryText,
-      textStyle: FlutterFlowTheme.of(context).bodyMedium.override(
-            font: GoogleFonts.nunito(),
+      checkColor: Colors.white,
+      checkboxBorderColor: Colors.grey,
+      textStyle: GoogleFonts.nunito(
             color: Colors.black,
             fontSize: 16,
           ),
@@ -77,7 +74,7 @@ class _DeletarContaWidgetState extends State<DeletarContaWidget> {
       },
       child: Scaffold(
         key: scaffoldKey,
-        backgroundColor: FlutterFlowTheme.of(context).info,
+        backgroundColor: Colors.white,
         appBar: AppBar(
           backgroundColor: const Color(0xC58910F0),
           automaticallyImplyLeading: false,
@@ -109,18 +106,16 @@ class _DeletarContaWidgetState extends State<DeletarContaWidget> {
                 Text(
                   'Por que deseja apagar sua conta?',
                   style: FlutterFlowTheme.of(context).bodyMedium.override(
-                        font: GoogleFonts.leagueSpartan(
-                          fontWeight: FontWeight.w300,
-                        ),
+                        font: GoogleFonts.leagueSpartan(),
+                        fontWeight: FontWeight.w600,
                         color: Colors.black,
-                        fontSize: 24,
+                        fontSize: 22,
                       ),
                 ),
                 const SizedBox(height: 15),
                 _buildCheckboxes(),
                 const SizedBox(height: 20),
                 Container(
-                  height: 160,
                   decoration: BoxDecoration(
                     color: const Color(0xFFECF1FF),
                     borderRadius: BorderRadius.circular(18),
@@ -130,54 +125,35 @@ class _DeletarContaWidgetState extends State<DeletarContaWidget> {
                     focusNode: _model.textFieldFocusNode,
                     maxLines: 5,
                     decoration: InputDecoration(
-                      hintText: 'Nos conte o que aconteceu',
-                      hintStyle: FlutterFlowTheme.of(context).labelMedium.override(
-                            font: GoogleFonts.nunito(),
-                            color: const Color(0xFFA9A6A6),
-                          ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide.none,
-                      ),
+                      hintText: 'Nos conte o que aconteceu (Opcional)',
+                      hintStyle: GoogleFonts.nunito(color: const Color(0xFFA9A6A6)),
+                      border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      filled: true,
-                      fillColor: const Color(0xFFECF1FF),
                     ),
-                    style: FlutterFlowTheme.of(context).bodyMedium.override(
-                          font: GoogleFonts.nunito(),
-                          color: const Color(0xFFA9A6A6),
-                        ),
-                    cursorColor: FlutterFlowTheme.of(context).primaryText,
-                    enableInteractiveSelection: true,
-                    validator: _model.textControllerValidator?.asValidator(context),
+                    style: GoogleFonts.nunito(color: Colors.black87),
                   ),
                 ),
                 const Spacer(),
                 FFButtonWidget(
                   onPressed: () async {
+                    // Abre o modal de confirmação
                     await showModalBottomSheet(
                       isScrollControlled: true,
                       backgroundColor: Colors.transparent,
                       enableDrag: false,
                       context: context,
                       builder: (context) {
-                        return GestureDetector(
-                          onTap: () {
-                            FocusScope.of(context).unfocus();
-                            FocusManager.instance.primaryFocus?.unfocus();
-                          },
-                          child: Padding(
-                            padding: MediaQuery.viewInsetsOf(context),
-                            child: const AvisoDeletarContaWidget(),
-                          ),
+                        return Padding(
+                          padding: MediaQuery.viewInsetsOf(context),
+                          child: const AvisoDeletarContaWidget(),
                         );
                       },
-                    ).then((_) => safeSetState(() {}));
+                    );
                   },
                   text: 'Deletar conta',
                   options: FFButtonOptions(
                     height: 45,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    width: double.infinity,
                     color: const Color(0xC58910F0),
                     textStyle: FlutterFlowTheme.of(context).titleSmall.override(
                           font: GoogleFonts.leagueSpartan(),

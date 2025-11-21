@@ -38,7 +38,5 @@ class TelaCompletarPerfilModel
   }
   
   @override
-  void initState(BuildContext context) {
-    // TODO: implement initState
-  }
+  void initState(BuildContext context) {}
 }

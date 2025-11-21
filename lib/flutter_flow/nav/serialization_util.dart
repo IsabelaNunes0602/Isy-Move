@@ -1,3 +1,6 @@
+// Adicionamos esta linha para ignorar os avisos de nome Maiúsculo no Enum
+// ignore_for_file: constant_identifier_names
+
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -72,7 +75,7 @@ String? serializeParam(
     }
     return data;
   } catch (e) {
-    print('Error serializing parameter: $e');
+    debugPrint('Error serializing parameter: $e');
     return null;
   }
 }
@@ -194,7 +197,8 @@ dynamic deserializeParam<T>(
         return json.decode(param);
     }
   } catch (e) {
-    print('Error deserializing parameter: $e');
+    // Correção do aviso de print
+    debugPrint('Error deserializing parameter: $e');
     return null;
   }
 }

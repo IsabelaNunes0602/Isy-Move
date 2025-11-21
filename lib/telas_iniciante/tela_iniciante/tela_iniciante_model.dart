@@ -1,30 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-// Importa o modelo de dados Treino
-import 'package:tcc_1/tela_treino_fixo/treino_model.dart'; 
+import 'package:tcc_1/tela_treino_fixo/treino_model.dart';
 
 class TelaInicianteModel extends ChangeNotifier {
   // Variáveis de estado
   int treinosConcluidos = 0;
   bool isLoading = true;
   
-  // NOVA PROPRIEDADE: Lista de treinos que será preenchida pelo banco
+  // Lista de treinos que vem do banco
   List<Treino> listaTreinos = [];
   
   // Meta do nível iniciante
   static const int metaNivel = 15;
 
-  /// Retorna o percentual de progresso entre 0.0 e 1.0
+  /// Retorna o percentual de progresso entre 0.0 e 1.0 para a barra
   double get percentualProgresso {
     if (treinosConcluidos >= metaNivel) return 1.0;
     return treinosConcluidos / metaNivel;
   }
 
-  /// Inicializa buscando os dados do banco
-  Future<void> init(BuildContext context) async {
+  /// Inicializa tudo (chama ao abrir a tela pela primeira vez)
+  Future<void> init() async {
     isLoading = true;
     notifyListeners();
 
+    try {
+      // Carrega as duas coisas em paralelo para ser mais rápido
+      await Future.wait([
+        carregarListaTreinos(),
+        atualizarProgresso(),
+      ]);
+    } catch (e) {
+      debugPrint('Erro ao inicializar tela iniciante: $e');
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Busca o número do contador 
+  Future<void> atualizarProgresso() async {
     try {
       final supabase = Supabase.instance.client;
       final userId = supabase.auth.currentUser?.id;
@@ -39,28 +54,36 @@ class TelaInicianteModel extends ChangeNotifier {
 
         if (responseProgresso != null) {
           int valorBanco = responseProgresso['treinos_concluidos'] as int;
+          // Garante que visualmente não ultrapasse a meta (ex: 16/15)
           treinosConcluidos = valorBanco > metaNivel ? metaNivel : valorBanco;
+          notifyListeners(); // Atualiza a tela
         }
-
-        // 2. Busca a Lista de Treinos do Nível 'Iniciante'
-        final responseTreinos = await supabase
-            .from('treinos_fixos')
-            .select('*') // Seleciona todas as colunas
-            .eq('nivel', 'Iniciante') // Filtra apenas treinos de iniciante
-            .order('nome_treino', ascending: true); // Ordena alfabeticamente
-        
-        // Converte a resposta (List<Map>) para List<Treino> usando o factory do modelo
-        listaTreinos = (responseTreinos as List)
-            .map((data) => Treino.fromSupabase(data))
-            .toList();
-            
-        print('Treinos carregados: ${listaTreinos.length}');
       }
     } catch (e) {
-      print('Erro ao carregar dados da tela iniciante: $e');
-    } finally {
-      isLoading = false;
-      notifyListeners();
+      debugPrint('Erro ao atualizar progresso: $e');
+    }
+  }
+
+  /// Busca a lista de treinos completa (com imagens, descrições)
+  Future<void> carregarListaTreinos() async {
+    try {
+      final supabase = Supabase.instance.client;
+      
+      // O Supabase v2 já retorna os dados tipados como List<Map<String, dynamic>>
+      final responseTreinos = await supabase
+          .from('treinos_fixos')
+          .select('*')
+          .eq('nivel', 'Iniciante')
+          .order('nome_treino', ascending: true);
+      
+      listaTreinos = responseTreinos
+          .map((data) => Treino.fromSupabase(data))
+          .toList();
+            
+      debugPrint('Treinos carregados: ${listaTreinos.length}');
+      
+    } catch (e) {
+      debugPrint('Erro ao carregar lista de treinos: $e');
     }
   }
 }

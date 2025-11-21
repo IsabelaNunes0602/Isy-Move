@@ -3,9 +3,9 @@ import 'package:go_router/go_router.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import 'package:flutter/material.dart';
-import 'package:tcc_1/index.dart';
+
 import 'tela_avancado_model.dart';
-import '../tela_treino_avancado/tela_treino_avancado_widget.dart';
+
 export 'tela_avancado_model.dart';
 
 class TelaAvancadoWidget extends StatefulWidget {
@@ -66,12 +66,12 @@ class _TelaAvancadoWidgetState extends State<TelaAvancadoWidget> {
       borderRadius: BorderRadius.circular(12.0),
       child: Container(
         decoration: BoxDecoration(
-          color: selecionado ? const Color(0xFF8910F0) : Colors.white, // roxo principal uniforme
+          color: selecionado ? const Color(0xFF8910F0) : Colors.white, 
           borderRadius: BorderRadius.circular(12.0),
           boxShadow: [
             BoxShadow(
               blurRadius: 6,
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               offset: const Offset(0, 4),
             )
           ],
@@ -85,12 +85,15 @@ class _TelaAvancadoWidgetState extends State<TelaAvancadoWidget> {
               size: 28,
             ),
             const SizedBox(width: 10),
-            Text(
-              nome,
-              style: TextStyle(
-                color: selecionado ? Colors.white : Colors.black87,
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
+            Flexible( 
+              child: Text(
+                nome,
+                style: TextStyle(
+                  color: selecionado ? Colors.white : Colors.black87,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             )
           ],
@@ -116,7 +119,10 @@ class _TelaAvancadoWidgetState extends State<TelaAvancadoWidget> {
             color: Colors.white,
           ),
         ),
-        leading: const BackButton(color: Colors.white),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => context.pop(),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 15),
@@ -147,7 +153,7 @@ class _TelaAvancadoWidgetState extends State<TelaAvancadoWidget> {
                 crossAxisCount: 2,
                 mainAxisSpacing: 15,
                 crossAxisSpacing: 15,
-                childAspectRatio: 3.6,
+                childAspectRatio: 3.0,
                 children: gruposMusculares.map(buildGrupoMuscular).toList(),
               ),
             ),
@@ -155,18 +161,25 @@ class _TelaAvancadoWidgetState extends State<TelaAvancadoWidget> {
               onPressed: () {
                 if (_model.gruposSelecionados.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Selecione pelo menos um grupo!')),
+                    const SnackBar(
+                      content: Text('Selecione pelo menos um grupo!'),
+                      backgroundColor: Colors.red,
+                    ),
                   );
                   return;
                 }
-                print('Gerar treino para: ${_model.gruposSelecionados}');
-                context.go(TelaTreinoAvancadoWidget.routePath);
+                
+                debugPrint('Gerando treino para: ${_model.gruposSelecionados}');
+                context.pushNamed(
+                  'telaTreinoAvancado', 
+                  extra: _model.gruposSelecionados,
+                );
               },
               text: 'Gerar treino',
               options: FFButtonOptions(
                 width: double.infinity,
                 height: 45,
-                color: const Color(0xFF8910F0), // roxo principal uniforme
+                color: const Color(0xFF8910F0),
                 textStyle: const TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 16,

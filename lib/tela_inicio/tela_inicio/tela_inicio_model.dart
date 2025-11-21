@@ -1,24 +1,12 @@
 import '/flutter_flow/flutter_flow_util.dart';
 import 'package:flutter/material.dart';
+import 'tela_inicio_widget.dart'; 
 
-class TelaInicioModel extends ChangeNotifier {
-  int? userProgress;
-  String? userLevel;
+class TelaInicioModel extends FlutterFlowModel<TelaInicioWidget> {
 
-  void updateProgress(int progress) {
-    userProgress = progress;
-    FFAppState().progressoUsuario = progress;
-    notifyListeners();
-  }
+  @override
+  void initState(BuildContext context) {}
 
-  void updateUserLevel(String level) {
-    userLevel = level;
-    // Atualize o FFAppState ou outro estado global se necessário
-    notifyListeners();
-  }
-
-  void init() {
-    userProgress = FFAppState().progressoUsuario;
-    userLevel = FFAppState().nivelUsuario;
-  }
+  @override
+  void dispose() {}
 }

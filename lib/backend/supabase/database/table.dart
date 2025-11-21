@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart'; // <--- IMPORT ADICIONADO
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tcc_1/backend/supabase/database/row.dart';
 import 'package:tcc_1/backend/supabase/supabase.dart';
@@ -25,7 +26,8 @@ abstract class SupabaseTable<T extends SupabaseDataRow> {
           .limit(1)
           .select()
           .maybeSingle()
-          .catchError((e) => print('Error querying row: $e'))
+          // CORREÇÃO AQUI: print -> debugPrint
+          .catchError((e) => debugPrint('Error querying row: $e')) 
           .then((r) => [if (r != null) createRow(r)]);
 
   Future<T> insert(Map<String, dynamic> data) => SupaFlow.client

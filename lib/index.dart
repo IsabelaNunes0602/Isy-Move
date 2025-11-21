@@ -1,7 +1,8 @@
 // Export pages
 export '/tela_carregamento/tela_carregamento/tela_carregamento_widget.dart'
     show TelaCarregamentoWidget;
-export '/tela_inicio/tela_inicio/tela_inicio_widget.dart' show TelaInicioWidget;
+export '/tela_inicio/tela_inicio/tela_inicio_widget.dart' 
+    show TelaInicioWidget;
 export '/telas_autenticacao/tela_login/tela_login_widget.dart'
     show TelaLoginWidget;
 export '/telas_autenticacao/tela_criar_conta/tela_criar_conta_widget.dart'
@@ -10,7 +11,7 @@ export '/main/pagina_inicial/pagina_inicial_widget.dart'
     show PaginaInicialWidget;
 export '/telas_usuario/tela_perfil/tela_perfil_widget.dart'
     show TelaPerfilWidget;
-export '/telas_usuario/tela_completar_perfil/tela_completar_perfil_widget.dart'
+export '/telas_autenticacao/tela_completar_perfil/tela_completar_perfil_widget.dart'
     show TelaCompletarPerfilWidget;
 export '/telas_configuracoes/tela_configuracoes/tela_configuracoes_widget.dart'
     show TelaConfiguracoesWidget;
@@ -24,21 +25,11 @@ export '/telas_configuracoes/alterar_senha/alterar_senha_widget.dart'
     show AlterarSenhaWidget;
 export '/telas_avancado/tela_avancado/tela_avancado_widget.dart'
     show TelaAvancadoWidget;
-export '/telas_iniciante/iniciante_treino_a/iniciante_treino_a_widget.dart'
-    show InicianteTreinoAWidget;
-export '/telas_iniciante/iniciante_treino_b/iniciante_treino_b_widget.dart'
-    show InicianteTreinoBWidget;
-export '/telas_intermediario/intermediario_treino_a/intermediario_treino_a_widget.dart'
-    show IntermediarioTreinoAWidget;
-export '/telas_intermediario/intermediario_treino_b/intermediario_treino_b_widget.dart'
-    show IntermediarioTreinoBWidget;
-export '/telas_intermediario/intermediario_treino_c/intermediario_treino_c_widget.dart'
-    show IntermediarioTreinoCWidget;
-export '/telas_intermediario/intermediario_treino_d/intermediario_treino_d_widget.dart'
-    show IntermediarioTreinoDWidget;
 export '/telas_iniciante/tela_iniciante/tela_iniciante_widget.dart'
     show TelaInicianteWidget;
 export '/telas_intermediario/tela_intermediario/tela_intermediario_widget.dart'
     show TelaIntermediarioWidget;
-export '/telas_configuracoes/tela_esqueci_senha/tela_esqueci_senha_widget.dart'
+export '/telas_autenticacao/tela_esqueci_senha/tela_esqueci_senha_widget.dart'
     show TelaEsqueciSenhaWidget;
+export '/tela_treino_fixo/treino_fixo_widget.dart' 
+    show TreinoFixoWidget;

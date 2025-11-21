@@ -1,14 +1,12 @@
 import 'package:go_router/go_router.dart';
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
-import 'package:syncfusion_flutter_charts/charts.dart';
-// Importante para datas
-import '../../backend/custom_services/evolucao_service.dart'; 
 
 import 'tela_evolucao_model.dart';
 export 'tela_evolucao_model.dart';
@@ -27,9 +25,6 @@ class _TelaEvolucaoWidgetState extends State<TelaEvolucaoWidget> {
   late TelaEvolucaoModel _model;
   final scaffoldKey = GlobalKey<ScaffoldState>();
   
-  // Serviço do Supabase
-  final EvolucaoService _evolucaoService = EvolucaoService();
-
   // Estado local para o gráfico
   List<WeightData> _historicoPesos = [];
   bool _isLoading = true;
@@ -39,7 +34,6 @@ class _TelaEvolucaoWidgetState extends State<TelaEvolucaoWidget> {
     super.initState();
     _model = createModel(context, () => TelaEvolucaoModel());
 
-    // Inicializa os controllers (vazios por enquanto, preencheremos no _carregarDados)
     _model.textController1 ??= TextEditingController();
     _model.textFieldFocusNode1 ??= FocusNode();
 
@@ -49,45 +43,10 @@ class _TelaEvolucaoWidgetState extends State<TelaEvolucaoWidget> {
     _model.textController3 ??= TextEditingController();
     _model.textFieldFocusNode3 ??= FocusNode();
 
-    // Busca os dados reais do banco ao iniciar a tela
-    _carregarDados();
-  }
-
-  // --- INTEGRAÇÃO SUPABASE: Função para buscar dados ---
-  Future<void> _carregarDados() async {
-    try {
-      // 1. Busca histórico para o gráfico
-      final dadosGrafico = await _evolucaoService.buscarDadosGrafico();
-      
-      // 2. Busca meta atual (opcional, se quiser garantir que está atualizado do banco)
-      final metaAtual = await _evolucaoService.buscarMetaPeso();
-
-      if (mounted) {
-        setState(() {
-          // Converte o Map do service para o objeto WeightData do gráfico
-          _historicoPesos = dadosGrafico.map((item) {
-            return WeightData(item['data_completa'] as DateTime, (item['peso'] as num).toDouble());
-          }).toList();
-
-          // Atualiza os campos de texto com dados reais (se existirem)
-          if (metaAtual != null) {
-             _model.textController1?.text = metaAtual.toString();
-          }
-          // O peso atual é o último do histórico
-          if (_historicoPesos.isNotEmpty) {
-            _model.textController2?.text = _historicoPesos.last.weight.toString();
-          }
-          
-          // Preenche o progresso (Exemplo fixo ou vindo do FFAppState)
-          _model.textController3?.text = FFAppState().progressoUsuario.toString();
-
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      print("Erro ao carregar dados: $e");
-      if (mounted) setState(() => _isLoading = false);
-    }
+    // Busca dados reais assim que a tela abre
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+       _carregarDadosCompletos();
+    });
   }
 
   @override
@@ -96,9 +55,143 @@ class _TelaEvolucaoWidgetState extends State<TelaEvolucaoWidget> {
     super.dispose();
   }
 
+  // --- INTEGRAÇÃO SUPABASE DIRETA ---
+  Future<void> _carregarDadosCompletos() async {
+    setState(() => _isLoading = true);
+    try {
+      final supabase = Supabase.instance.client;
+      final userId = supabase.auth.currentUser?.id;
+      
+      if (userId == null) return;
+
+      // 1. Busca Histórico de Peso
+      final responseHistorico = await supabase
+          .from('historico_peso')
+          .select('peso, data_registro')
+          .eq('id_usuario', userId)
+          .order('data_registro', ascending: true);
+
+      List<WeightData> listaTemporaria = [];
+      for (var item in responseHistorico) {
+         listaTemporaria.add(WeightData(
+           DateTime.parse(item['data_registro']), 
+           (item['peso'] as num).toDouble()
+         ));
+      }
+
+      // 2. Busca Dados do Usuário
+      final responseUser = await supabase
+          .from('usuario')
+          .select('metaPeso') 
+          .eq('id_usuario', userId)
+          .maybeSingle();
+          
+      // 3. Busca Progresso e o Desconto Inicial
+      final responseProgresso = await supabase
+          .from('progresso')
+          .select('treinos_concluidos, desconto_inicial')
+          .eq('id_usuario', userId)
+          .maybeSingle();
+
+      if (mounted) {
+        setState(() {
+          _historicoPesos = listaTemporaria;
+
+          if (responseUser != null && responseUser['metaPeso'] != null) {
+             _model.textController1?.text = responseUser['metaPeso'].toString();
+          }
+
+          if (_historicoPesos.isNotEmpty) {
+             _model.textController2?.text = _historicoPesos.last.weight.toString();
+          }
+
+          // --- LÓGICA DEFINITIVA DE CONTAGEM REAL ---
+          if (responseProgresso != null) {
+             int totalBanco = responseProgresso['treinos_concluidos'] as int;
+             // Se o campo for nulo (usuários antigos), assume 0
+             int desconto = (responseProgresso['desconto_inicial'] as int?) ?? 0; 
+             
+             // A Mágica: Total acumulado - O que ele ganhou de brinde no cadastro
+             int treinosReaisFeitos = totalBanco - desconto;
+             
+             // Proteção para não mostrar negativo (caso edite banco manualmente)
+             if (treinosReaisFeitos < 0) treinosReaisFeitos = 0;
+
+             _model.textController3?.text = treinosReaisFeitos.toString();
+          }
+          // -------------------------------------------
+          
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Erro ao carregar dados: $e");
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  // Função para salvar novo peso e criar ponto no gráfico
+  Future<void> _atualizarPeso(double novoPeso) async {
+     try {
+       final supabase = Supabase.instance.client;
+       final userId = supabase.auth.currentUser?.id;
+       if (userId == null) return;
+
+       // 1. Atualiza o peso atual no perfil do usuário (para aparecer no topo da tela)
+       await supabase.from('usuario').update({
+         'pesoAtual': novoPeso
+       }).eq('id_usuario', userId);
+
+       // 2. INSERE um novo registro no histórico (Sempre cria um novo ponto)
+       await supabase.from('historico_peso').insert({
+         'id_usuario': userId,
+         'peso': novoPeso,
+         'data_registro': DateTime.now().toIso8601String() 
+       });
+
+       debugPrint('Novo peso adicionado ao histórico.');
+
+       // 3. Recarrega o gráfico
+       await _carregarDadosCompletos();
+
+       if (mounted) {
+         ScaffoldMessenger.of(context).showSnackBar(
+           const SnackBar(backgroundColor: Colors.green, content: Text('Peso registrado!')),
+         );
+       }
+     } catch (e) {
+       debugPrint('Erro ao atualizar peso: $e');
+       if (mounted) {
+         ScaffoldMessenger.of(context).showSnackBar(
+           SnackBar(backgroundColor: Colors.red, content: Text('Erro: $e')),
+         );
+       }
+     }
+  }
+
+  // Função para salvar apenas a Meta
+  Future<void> _atualizarMeta(double novaMeta) async {
+     try {
+       final supabase = Supabase.instance.client;
+       final userId = supabase.auth.currentUser?.id;
+       if (userId == null) return;
+
+       await supabase.from('usuario').update({
+         'metaPeso': novaMeta
+       }).eq('id_usuario', userId);
+
+       if (mounted) {
+         ScaffoldMessenger.of(context).showSnackBar(
+           const SnackBar(content: Text('Meta atualizada!')),
+         );
+       }
+     } catch (e) {
+       debugPrint('Erro ao atualizar meta: $e');
+     }
+  }
+
   @override
   Widget build(BuildContext context) {
-    context.watch<FFAppState>();
     const Color primaryColor = Color(0xFF8910F0);
 
     return GestureDetector(
@@ -108,7 +201,7 @@ class _TelaEvolucaoWidgetState extends State<TelaEvolucaoWidget> {
       },
       child: Scaffold(
         key: scaffoldKey,
-        backgroundColor: FlutterFlowTheme.of(context).info,
+        backgroundColor: Colors.white,
         appBar: AppBar(
           backgroundColor: primaryColor,
           automaticallyImplyLeading: false,
@@ -152,35 +245,36 @@ class _TelaEvolucaoWidgetState extends State<TelaEvolucaoWidget> {
                   ),
                   const SizedBox(height: 15),
 
-                  // --- INTEGRAÇÃO SUPABASE: Gráfico Dinâmico ---
+                  // --- GRÁFICO ---
                   _isLoading 
                     ? const Center(child: CircularProgressIndicator(color: primaryColor))
                     : AspectRatio(
                       aspectRatio: 1.7,
                       child: _historicoPesos.isEmpty 
-                        ? const Center(child: Text("Nenhum dado registrado ainda."))
+                        ? Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Center(child: Text("Registre seu peso para ver o gráfico.")),
+                          )
                         : SfCartesianChart(
                           primaryXAxis: DateTimeAxis(
-                            dateFormat: DateFormat('dd/MM'), // Dia/Mês fica melhor visualmente
+                            dateFormat: DateFormat('dd/MM'),
                             intervalType: DateTimeIntervalType.auto,
-                            edgeLabelPlacement: EdgeLabelPlacement.shift,
                             majorGridLines: const MajorGridLines(width: 0),
-                            labelRotation: 45,
-                            title: const AxisTitle(text: 'Data'),
                           ),
                           primaryYAxis: const NumericAxis(
-                            // Removemos minimo/maximo fixo para o gráfico se adaptar aos dados
                             title: AxisTitle(text: 'Peso (kg)'),
                             majorGridLines: MajorGridLines(width: 0.5, dashArray: <double>[5, 5]),
                           ),
-                          tooltipBehavior: TooltipBehavior(enable: true), // Adiciona tooltip ao tocar
+                          tooltipBehavior: TooltipBehavior(enable: true),
                           series: <CartesianSeries<WeightData, DateTime>>[
                             LineSeries<WeightData, DateTime>(
                               dataSource: _historicoPesos,
                               xValueMapper: (WeightData wd, _) => wd.date,
                               yValueMapper: (WeightData wd, _) => wd.weight,
                               markerSettings: const MarkerSettings(isVisible: true),
-                              dataLabelSettings: const DataLabelSettings(isVisible: false), // Poluição visual se tiver muitos dados
                               color: primaryColor,
                               width: 3,
                               animationDuration: 1500,
@@ -191,11 +285,10 @@ class _TelaEvolucaoWidgetState extends State<TelaEvolucaoWidget> {
 
                   const SizedBox(height: 35),
 
-                  // Campos Meta e Peso Atual
+                  // --- CAMPOS DE EDIÇÃO ---
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // --- CAMPO META ---
+                      // META
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -206,18 +299,7 @@ class _TelaEvolucaoWidgetState extends State<TelaEvolucaoWidget> {
                             TextButton(
                               onPressed: () async {
                                 double? meta = double.tryParse(_model.textController1?.text.replaceAll(',', '.') ?? '');
-                                if (meta != null) {
-                                  // Salva no Supabase
-                                  await _evolucaoService.atualizarMeta(meta);
-                                  // Atualiza estado global (opcional)
-                                  FFAppState().metaPeso = meta;
-                                  
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Meta atualizada com sucesso!')),
-                                    );
-                                  }
-                                }
+                                if (meta != null) await _atualizarMeta(meta);
                               },
                               child: const Text('Alterar'),
                             ),
@@ -226,7 +308,7 @@ class _TelaEvolucaoWidgetState extends State<TelaEvolucaoWidget> {
                       ),
                       const SizedBox(width: 20),
                       
-                      // --- CAMPO PESO ATUAL ---
+                      // PESO ATUAL
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -237,27 +319,7 @@ class _TelaEvolucaoWidgetState extends State<TelaEvolucaoWidget> {
                             TextButton(
                               onPressed: () async {
                                 double? peso = double.tryParse(_model.textController2?.text.replaceAll(',', '.') ?? '');
-                                if (peso != null) {
-                                  // Mostra loading rápido
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Salvando peso...'), duration: Duration(milliseconds: 800)),
-                                    );
-
-                                  // 1. Atualiza no Supabase (Trigger cria o histórico)
-                                  await _evolucaoService.atualizarPeso(peso);
-                                  
-                                  // 2. Atualiza estado global
-                                  FFAppState().pesoAtual = peso;
-
-                                  // 3. Recarrega o gráfico para mostrar o ponto novo
-                                  await _carregarDados();
-
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(backgroundColor: Colors.green, content: Text('Histórico atualizado!')),
-                                    );
-                                  }
-                                }
+                                if (peso != null) await _atualizarPeso(peso);
                               },
                               child: const Text('Alterar'),
                             ),
@@ -269,7 +331,7 @@ class _TelaEvolucaoWidgetState extends State<TelaEvolucaoWidget> {
 
                   const SizedBox(height: 30),
 
-                  // Contagem de treinos (Mantido igual, apenas visualização)
+                  // CONTAGEM (Apenas Leitura)
                   Text('Contagem de treinos concluídos', style: _labelStyle(context)),
                   const SizedBox(height: 8),
                   Container(
@@ -277,15 +339,16 @@ class _TelaEvolucaoWidgetState extends State<TelaEvolucaoWidget> {
                     width: 100,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: FlutterFlowTheme.of(context).secondaryBackground,
+                      color: const Color(0xFFF1F4F8),
                       borderRadius: BorderRadius.circular(8.0),
                       border: Border.all(color: Colors.grey.shade400),
                     ),
                     child: Text(
-                      valueOrDefault<String>(FFAppState().progressoUsuario.toString(), '0'),
+                      _model.textController3?.text ?? '0',
                       style: FlutterFlowTheme.of(context).bodyMedium.override(
                             font: GoogleFonts.nunito(),
                             fontSize: 16,
+                            fontWeight: FontWeight.bold,
                           ),
                     ),
                   ),
@@ -298,7 +361,6 @@ class _TelaEvolucaoWidgetState extends State<TelaEvolucaoWidget> {
     );
   }
 
-  // Helpers para limpar o código principal
   TextStyle _labelStyle(BuildContext context) {
     return FlutterFlowTheme.of(context).bodyMedium.override(
           font: GoogleFonts.leagueSpartan(),
@@ -312,7 +374,7 @@ class _TelaEvolucaoWidgetState extends State<TelaEvolucaoWidget> {
     return Container(
       height: 40,
       decoration: BoxDecoration(
-        color: FlutterFlowTheme.of(context).secondaryBackground,
+        color: const Color(0xFFF1F4F8),
         borderRadius: BorderRadius.circular(8.0),
         border: Border.all(color: Colors.grey.shade400),
       ),
@@ -329,13 +391,11 @@ class _TelaEvolucaoWidgetState extends State<TelaEvolucaoWidget> {
               font: GoogleFonts.nunito(),
               fontSize: 16,
             ),
-        cursorColor: FlutterFlowTheme.of(context).primaryText,
       ),
     );
   }
 }
 
-// Classe de dados para o gráfico
 class WeightData {
   final DateTime date;
   final double weight;

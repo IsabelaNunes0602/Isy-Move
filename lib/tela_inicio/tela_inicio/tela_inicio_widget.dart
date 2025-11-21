@@ -20,7 +20,7 @@ class _TelaInicioWidgetState extends State<TelaInicioWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // Cor Roxa do seu tema
+
     const primaryPurple = Color(0xFF8910F0); 
 
     return GestureDetector(
@@ -35,7 +35,7 @@ class _TelaInicioWidgetState extends State<TelaInicioWidget> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Se a imagem não carregar, mostra um ícone como fallback
+                  // Logo
                   Image.asset(
                     'assets/images/logo.png',
                     width: 350,
@@ -47,6 +47,8 @@ class _TelaInicioWidgetState extends State<TelaInicioWidget> {
                     ),
                   ),
                   const SizedBox(height: 30),
+                  
+                  // Slogan
                   Text(
                     'Mexa-se. Evolua. Sinta a diferença',
                     textAlign: TextAlign.center,
@@ -91,7 +93,8 @@ class _TelaInicioWidgetState extends State<TelaInicioWidget> {
                       text: 'Criar uma conta',
                       options: FFButtonOptions(
                         height: 50,
-                        color: Colors.white.withOpacity(0.2),
+ 
+                        color: Colors.white.withValues(alpha: 0.2),
                         textStyle: GoogleFonts.leagueSpartan(
                           color: Colors.white,
                           fontSize: 18,
