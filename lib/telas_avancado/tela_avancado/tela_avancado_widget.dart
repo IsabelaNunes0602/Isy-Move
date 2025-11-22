@@ -24,16 +24,16 @@ class _TelaAvancadoWidgetState extends State<TelaAvancadoWidget> {
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
   final List<Map<String, dynamic>> gruposMusculares = [
-    {'nome': 'Peito', 'icone': Icons.sports_gymnastics},
-    {'nome': 'Costas', 'icone': Icons.back_hand},
-    {'nome': 'Bíceps', 'icone': Icons.fitness_center},
-    {'nome': 'Tríceps', 'icone': Icons.sports_kabaddi},
-    {'nome': 'Ombros', 'icone': Icons.accessibility_new},
-    {'nome': 'Abdômen', 'icone': Icons.sports_martial_arts},
-    {'nome': 'Quadríceps', 'icone': Icons.run_circle},
-    {'nome': 'Posterior', 'icone': Icons.directions_run},
-    {'nome': 'Glúteo', 'icone': Icons.checkroom},
-    {'nome': 'Panturrilha', 'icone': Icons.directions_walk},
+    {'nome': 'Peito', 'imagem': 'assets/images/peito.png'},
+    {'nome': 'Costas', 'imagem': 'assets/images/costas.png'},
+    {'nome': 'Bíceps', 'imagem': 'assets/images/biceps.png'},
+    {'nome': 'Tríceps', 'imagem': 'assets/images/triceps.png'},
+    {'nome': 'Ombros', 'imagem': 'assets/images/ombro.png'},
+    {'nome': 'Abdômen', 'imagem': 'assets/images/abdominal.png'},
+    {'nome': 'Quadríceps', 'imagem': 'assets/images/quadriceps.png'},
+    {'nome': 'Posterior', 'imagem': 'assets/images/posterior.png'},
+    {'nome': 'Glúteo', 'imagem': 'assets/images/gluteo.png'},
+    {'nome': 'Panturrilha', 'imagem': 'assets/images/panturrilha.png'},
   ];
 
   @override
@@ -50,7 +50,7 @@ class _TelaAvancadoWidgetState extends State<TelaAvancadoWidget> {
 
   Widget buildGrupoMuscular(Map<String, dynamic> grupo) {
     final nome = grupo['nome'] as String;
-    final icone = grupo['icone'] as IconData;
+    final imagemPath = grupo['imagem'] as String;
     final selecionado = _model.gruposSelecionados.contains(nome);
 
     return InkWell(
@@ -79,10 +79,11 @@ class _TelaAvancadoWidgetState extends State<TelaAvancadoWidget> {
         padding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 12.0),
         child: Row(
           children: [
-            Icon(
-              icone,
-              color: selecionado ? Colors.white : Colors.black87,
-              size: 28,
+            Image.asset(
+              imagemPath,
+              width: 28,
+              height: 28,
+              fit: BoxFit.contain,
             ),
             const SizedBox(width: 10),
             Flexible( 
